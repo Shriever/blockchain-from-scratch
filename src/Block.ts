@@ -10,6 +10,7 @@ export class Block implements IBlock {
   parentHash: string;
   hash: string;
   height: number;
+  coinbaseBeneficiary: string;
 
   constructor(opts: BlockParams) {
     const {
@@ -17,7 +18,9 @@ export class Block implements IBlock {
       parentHash,
       nonce = '0',
       height,
+      coinbaseBeneficiary
     } = {
+        coinbaseBeneficiary: "root",
       ...opts,
     };
     this.blockchain = blockchain;
@@ -25,6 +28,7 @@ export class Block implements IBlock {
     this.parentHash = parentHash;
     this.hash = sha256(this.nonce + this.parentHash).toString();
     this.height = height;
+    this.coinbaseBeneficiary = coinbaseBeneficiary;
   }
 
   isRoot() {
@@ -37,6 +41,15 @@ export class Block implements IBlock {
       (this.hash.substring(0, DIFFICULTY) === '0'.repeat(DIFFICULTY) &&
         this.hash === this._calculateHash())
     );
+  }
+
+  createChild(coinbaseBeneficiary: string) {
+    return new Block({
+      blockchain: this.blockchain,
+      parentHash: this.hash,
+      height: this.height + 1,
+      coinbaseBeneficiary,
+    });
   }
 
   _calculateHash() {
@@ -60,12 +73,13 @@ export class Block implements IBlock {
     }
   }
 
-  toJSON () {
+  toJSON() {
     return {
-        nonce: this.nonce,
-        parentHash: this.parentHash,
-        hash: this.hash,
-        height: this.height
-    }
+      nonce: this.nonce,
+      parentHash: this.parentHash,
+      hash: this.hash,
+      height: this.height,
+      coinbaseBeneficiary: this.coinbaseBeneficiary
+    };
   }
 }

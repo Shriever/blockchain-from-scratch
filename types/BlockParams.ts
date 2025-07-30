@@ -3,6 +3,7 @@ export interface BlockParams {
   parentHash: string;
   nonce?: string;
   height: number;
+  coinbaseBeneficiary?: string;
 }
 
 export interface IBlock {
