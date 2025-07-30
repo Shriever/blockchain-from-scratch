@@ -1,7 +1,8 @@
 export interface BlockParams {
   blockchain: any;
   parentHash: string;
-  nonce: number;
+  nonce?: string;
+  height: number;
 }
 
 export interface IBlock {
@@ -9,4 +10,5 @@ export interface IBlock {
     nonce: string;
     parentHash: string;
     hash: string;
+    height: number;
 }

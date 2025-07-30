@@ -5,20 +5,26 @@ import { Blockchain } from './BlockChain';
 const DIFFICULTY = 2;
 
 export class Block implements IBlock {
-  blockchain: any;
+  blockchain: Blockchain;
   nonce: string;
   parentHash: string;
   hash: string;
+  height: number;
 
-  constructor(
-    blockchain: Blockchain,
-    parentHash: string,
-    nonce: string = sha256(new Date().getTime().toString()).toString()
-  ) {
+  constructor(opts: BlockParams) {
+    const {
+      blockchain,
+      parentHash,
+      nonce = '0',
+      height,
+    } = {
+      ...opts,
+    };
     this.blockchain = blockchain;
     this.nonce = nonce;
     this.parentHash = parentHash;
     this.hash = sha256(this.nonce + this.parentHash).toString();
+    this.height = height;
   }
 
   isRoot() {
@@ -47,12 +53,19 @@ export class Block implements IBlock {
   }
 
   mineValidHash() {
-    let i = 0;
+    let i = Number(this.nonce) + 1;
     while (!this.isValid()) {
       this.setNonce(sha256(i.toString()).toString());
-      console.log(`Nonce: ${this.nonce}`);
-
       i++;
+    }
+  }
+
+  toJSON () {
+    return {
+        nonce: this.nonce,
+        parentHash: this.parentHash,
+        hash: this.hash,
+        height: this.height
     }
   }
 }

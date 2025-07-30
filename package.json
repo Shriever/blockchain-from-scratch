@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@types/crypto-js": "^4.2.2",
-    "crypto-js": "^4.2.0"
+    "@types/ramda": "^0.31.0",
+    "crypto-js": "^4.2.0",
+    "ramda": "^0.31.3"
   },
   "devDependencies": {
     "@types/chai": "^5.2.2",

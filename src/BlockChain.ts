@@ -1,3 +1,4 @@
+import { maxBy, prop, reduce, reverse, unfold, values } from 'ramda';
 import { Block } from './Block';
 
 export class Blockchain {
@@ -11,7 +12,13 @@ export class Blockchain {
   }
 
   createGenesisBlock() {
-    const block = new Block(this, 'root', this.name);
+    const opts = {
+      blockchain: this,
+      parentHash: 'root',
+      name: this.name,
+      height: 1,
+    };
+    const block = new Block(opts);
     this.blocks[block.hash] = block;
     return block;
   }
@@ -33,5 +40,24 @@ export class Blockchain {
 
   containsBlock(block: Block) {
     return this.blocks[block.hash] !== undefined;
+  }
+
+  maxHeightBlock() {
+    const blocks = values(this.blocks);
+    const maxByHeight = maxBy<Block>(b => b.height);
+
+    const maxHeightBlock = reduce(maxByHeight, blocks[0], blocks);
+    return maxHeightBlock;
+  }
+
+  longestChain() {
+    const getParent = (x: Block | undefined): false | [Block, Block] => {
+      if (!x) {
+        return false;
+      }
+
+      return [x, this.blocks[x.parentHash]];
+    };
+    return reverse(unfold(getParent, this.maxHeightBlock()));
   }
 }
