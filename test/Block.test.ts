@@ -22,4 +22,24 @@ describe('Block', () => {
 
     expect(JSON.hash).to.equal(block1.hash);
   });
+
+  it('setNonce should update hash', () => {
+    const nonce = block1.nonce;
+    const hash = block1.hash;
+
+    block1.setNonce('5000');
+
+    expect(nonce).to.not.equal(block1.nonce);
+    expect(hash).to.not.equal(block1.hash);
+  });
+
+  it('mineValidHash should update the hash and nonce', () => {
+    const hash = block1.hash;
+
+    block1.setNonce('5000');
+    block1.mineValidHash();
+
+    expect(hash).to.not.equal(block1.hash);
+    expect(block1.nonce).to.not.equal('5000');
+  });
 });

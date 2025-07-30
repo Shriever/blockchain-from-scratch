@@ -1,4 +1,4 @@
-import { maxBy, prop, reduce, reverse, unfold, values } from 'ramda';
+import { maxBy, reduce, reverse, unfold, values } from 'ramda';
 import { Block } from './Block';
 
 export class Blockchain {
