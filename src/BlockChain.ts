@@ -1,14 +1,19 @@
-import { maxBy, reduce, reverse, unfold, values } from 'ramda';
+import { maxBy, o, reduce, reverse, unfold, values } from 'ramda';
 import { Block } from './Block';
+import { UTXO, UTXOPool } from './UTXOPool';
+
+const MINER_REWARD = 16;
 
 export class Blockchain {
   name: string;
   blocks: Record<string, Block> = {};
   genesis: Block;
+  utxoPool: UTXOPool;
 
   constructor(name: string) {
     this.name = name;
     this.genesis = this.createGenesisBlock();
+    this.utxoPool = new UTXOPool();
   }
 
   createGenesisBlock() {
@@ -23,8 +28,12 @@ export class Blockchain {
     return block;
   }
 
-  addBlock(newBlock: Block) {
+  addBlock(newBlock: Block, minerKey: string) {
+    newBlock.mineValidHash();
     this._addBlock(newBlock);
+
+    const utxo = new UTXO(MINER_REWARD, minerKey);
+    this.utxoPool.addUTXO(utxo);
   }
 
   _addBlock(block: Block) {
@@ -33,7 +42,7 @@ export class Blockchain {
 
     // check that the parent exists
     const parent = this.blocks[block.parentHash];
-    if (parent === undefined) return;
+    if (parent === undefined || parent.height + 1 !== block.height) return;
 
     this.blocks[block.hash] = block;
   }

@@ -2,6 +2,8 @@ import { expect } from 'chai';
 import { Blockchain } from '../src/BlockChain';
 import { Block } from '../src/Block';
 import { BlockParams } from '../types/BlockParams';
+import { Wallet } from '../src/Wallet';
+import { generatePair } from '../src/utils/crypto';
 
 describe('Blockchain', () => {
   let blockchain: Blockchain;
@@ -9,8 +11,13 @@ describe('Blockchain', () => {
   let block2: Block;
   let block3: Block;
   let block4: Block;
-  
+  let blocks: Block[];
+
+  let miner: Wallet;
+
   beforeEach(() => {
+    miner = new Wallet(generatePair());
+
     blockchain = new Blockchain('myblockchain');
     const opts1: BlockParams = {
       blockchain,
@@ -43,6 +50,8 @@ describe('Blockchain', () => {
     };
     block4 = new Block(opts4);
     block4.mineValidHash();
+
+    blocks = [block1, block2, block3, block4];
   });
 
   it('Should create genesis block', () => {
@@ -50,19 +59,16 @@ describe('Blockchain', () => {
   });
 
   it('Should allow adding blocks', () => {
-    blockchain.addBlock(block1);
-    blockchain.addBlock(block2);
-
-    expect(blockchain.containsBlock(block1)).to.be.true;
-    expect(blockchain.containsBlock(block2)).to.be.true;
+    const key = miner.getPublicKey();
+    blocks.forEach(b => {
+        blockchain.addBlock(b, key)
+        expect(blockchain.containsBlock(b)).to.be.true;
+    })
   });
 
   it('Should set the longest chain as longest chain', () => {
-    
-    blockchain.addBlock(block1);
-    blockchain.addBlock(block2);
-    blockchain.addBlock(block3);
-    blockchain.addBlock(block4);
+    const key = miner.getPublicKey();
+    blocks.forEach(b => blockchain.addBlock(b, key))
 
     const longest = blockchain.longestChain();
 

@@ -9,7 +9,7 @@ interface KeyPair {
   privateKey: string;
 }
 
-class Wallet {
+export class Wallet {
   keyPair: KeyPair;
   balance: number;
 
@@ -24,5 +24,9 @@ class Wallet {
 
   getBalance() {
     return this.balance;
+  }
+
+  getPublicKey() {
+    return this.keyPair.publicKey;
   }
 }

@@ -1,10 +1,11 @@
 import sha256 from 'crypto-js/sha256';
-import { BlockParams, IBlock } from '../types/BlockParams';
+import { BlockParams } from '../types/BlockParams';
 import { Blockchain } from './BlockChain';
+import { UTXOPool } from './UTXOPool';
 
 const DIFFICULTY = 2;
 
-export class Block implements IBlock {
+export class Block {
   blockchain: Blockchain;
   nonce: string;
   parentHash: string;
@@ -43,14 +44,14 @@ export class Block implements IBlock {
     );
   }
 
-  createChild(coinbaseBeneficiary: string) {
-    return new Block({
-      blockchain: this.blockchain,
-      parentHash: this.hash,
-      height: this.height + 1,
-      coinbaseBeneficiary,
-    });
-  }
+//   createChild(coinbaseBeneficiary: string) {
+//     return new Block({
+//       blockchain: this.blockchain,
+//       parentHash: this.hash,
+//       height: this.height + 1,
+//       coinbaseBeneficiary,
+//     });
+//   }
 
   _calculateHash() {
     return sha256(this.nonce + this.parentHash).toString();
