@@ -13,7 +13,6 @@ describe('Block', () => {
       parentHash: blockchain.genesis.hash,
     };
     block1 = new Block(opts1);
-    console.log(`block1: ${block1}`)
     block1.mineValidHash();
   });
 
