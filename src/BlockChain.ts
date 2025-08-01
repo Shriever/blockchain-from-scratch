@@ -18,7 +18,6 @@ export class Blockchain {
     const opts = {
       blockchain: this,
       parentHash: 'root',
-      // name: this.name,
     };
     const block = new Block(opts);
     block.mineValidHash();

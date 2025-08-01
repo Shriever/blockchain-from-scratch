@@ -2,6 +2,7 @@ import sha256 from 'crypto-js/sha256';
 import { BlockParams } from '../types/BlockParams';
 import { Blockchain } from './BlockChain';
 import { UTXOPool } from './UTXOPool';
+import { Transaction } from './Transaction';
 
 const DIFFICULTY = 1;
 
@@ -12,6 +13,7 @@ export class Block {
   hash: string;
   utxoPool: UTXOPool;
   height: number = 1;
+  transactions: Transaction[] = [];
 
   constructor(opts: BlockParams) {
     const {

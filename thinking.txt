@@ -4,3 +4,23 @@ What we know:
 1. Get the maxHeightBlock
 2. Look inside the utxo pool and find array of utxos owned by the given public key
 3. compute the balance by adding all utxos in array  
+
+
+Transactions implementation: 
+a list of transactions are recorded in each block
+
+Steps involved in creating a transaction
+1. make sure the sender has enough funds, amount != 0
+2. make sure the recipient exists - I don't think this exists on blockchain
+3. figure out what combination of utxos should be burned to afford transfer
+4. burn utxos, give transfer amount to recipient and return return change to sender in new utxo
+5. add transfer to block
+
+who is creating a transaction?: a wallet will initiate a transaction
+the UTXOPool class will have a method that handles and validates
+the transaction which is called by the blockchain class
+
+when a wallet initiates a transfer, they can send the new transaction
+to the blockchain as a pending transaction. When there are x transactions 
+pending, they will be added to a new block and mined before being added to 
+the blockchain.
