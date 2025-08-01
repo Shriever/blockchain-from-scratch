@@ -1,26 +1,30 @@
-import { expect } from "chai";
-import { generatePair, sign, verifySignature } from "./../src/utils/crypto";
+import { expect } from 'chai';
+import { generatePair, sign, verifySignature } from './../src/utils/crypto';
 
-describe("crypto.ts (key pairs)", () => {
-    it("should produce a new key pair", () => {
-        const keyPair = generatePair();
+describe('crypto.ts (key pairs)', () => {
+  it('should produce a new key pair', () => {
+    const keyPair = generatePair();
 
-        expect(keyPair).to.have.property('privateKey')
-        expect(keyPair).to.have.property('publicKey')
-    })
-    
-    it('should sign a message and verify it', () => {
-        const keyPair = generatePair()
-        const message = "secret message";
+    expect(keyPair).to.have.property('privateKey');
+    expect(keyPair).to.have.property('publicKey');
+  });
 
-        const signature = sign(message, keyPair.privateKey)
+  it('should sign a message and verify it', () => {
+    const keyPair = generatePair();
+    const message = 'secret message';
 
-        const success = verifySignature(message, signature, keyPair.publicKey)
+    const signature = sign(message, keyPair.privateKey);
 
-        expect(success).to.be.true;
+    const success = verifySignature(message, signature, keyPair.publicKey);
 
-        // rejects an invalid call to verifySignature
-        const maliciousSuccess = verifySignature("fjkdls", signature, keyPair.publicKey)
-        expect(maliciousSuccess).to.be.false;
-    })
-})
+    expect(success).to.be.true;
+
+    // rejects an invalid call to verifySignature
+    const maliciousSuccess = verifySignature(
+      'fjkdls',
+      signature,
+      keyPair.publicKey
+    );
+    expect(maliciousSuccess).to.be.false;
+  });
+});

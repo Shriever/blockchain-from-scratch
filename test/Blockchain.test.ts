@@ -21,7 +21,6 @@ describe('Blockchain', () => {
     blockchain = new Blockchain('myblockchain');
     const opts1: BlockParams = {
       blockchain,
-      height: 2,
       parentHash: blockchain.genesis.hash,
     };
     block1 = new Block(opts1);
@@ -29,7 +28,6 @@ describe('Blockchain', () => {
 
     const opts2: BlockParams = {
       blockchain,
-      height: 3,
       parentHash: block1.hash,
     };
     block2 = new Block(opts2);
@@ -37,7 +35,6 @@ describe('Blockchain', () => {
 
     const opts3: BlockParams = {
       blockchain,
-      height: 4,
       parentHash: block2.hash,
     };
     block3 = new Block(opts3);
@@ -45,7 +42,6 @@ describe('Blockchain', () => {
 
     const opts4: BlockParams = {
       blockchain,
-      height: 3,
       parentHash: block1.hash,
     };
     block4 = new Block(opts4);
@@ -61,14 +57,14 @@ describe('Blockchain', () => {
   it('Should allow adding blocks', () => {
     const key = miner.getPublicKey();
     blocks.forEach(b => {
-        blockchain.addBlock(b, key)
-        expect(blockchain.containsBlock(b)).to.be.true;
-    })
+      blockchain.addBlock(b, key);
+      expect(blockchain.containsBlock(b)).to.be.true;
+    });
   });
 
   it('Should set the longest chain as longest chain', () => {
     const key = miner.getPublicKey();
-    blocks.forEach(b => blockchain.addBlock(b, key))
+    blocks.forEach(b => blockchain.addBlock(b, key));
 
     const longest = blockchain.longestChain();
 

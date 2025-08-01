@@ -10,10 +10,10 @@ describe('Block', () => {
     const blockchain: Blockchain = new Blockchain('myblockchain');
     const opts1: BlockParams = {
       blockchain,
-      height: 2,
       parentHash: blockchain.genesis.hash,
     };
     block1 = new Block(opts1);
+    console.log(`block1: ${block1}`)
     block1.mineValidHash();
   });
 

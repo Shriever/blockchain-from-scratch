@@ -2,6 +2,7 @@
 // Should be able to sign messages
 // Should have a place to store currency
 
+import { Blockchain } from './BlockChain';
 import { sign } from './utils/crypto';
 
 interface KeyPair {
@@ -11,22 +12,30 @@ interface KeyPair {
 
 export class Wallet {
   keyPair: KeyPair;
-  balance: number;
 
   constructor(keyPair: KeyPair) {
     this.keyPair = keyPair;
-    this.balance = 0;
   }
 
   signMessage(message: string) {
     sign(message, this.keyPair.privateKey);
   }
 
-  getBalance() {
-    return this.balance;
+  getBalance(blockchain: Blockchain) {
+    /**
+     * 1. Get the maxHeightBlock
+     * 2. Look inside the utxo pool and find array of utxos owned by the given public key
+     * 3. compute the balance by adding all utxos in array  
+     */
+    const maxHeightBlock = blockchain.maxHeightBlock();
+    const utxos = maxHeightBlock.utxoPool.findByPublicKey(this.getPublicKey());
+    const balance = utxos.reduce((total, utxo) => total + utxo.value, 0)
+
+    return balance;
   }
 
   getPublicKey() {
     return this.keyPair.publicKey;
   }
+
 }

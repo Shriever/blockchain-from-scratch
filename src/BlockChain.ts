@@ -1,6 +1,6 @@
-import { maxBy, o, reduce, reverse, unfold, values } from 'ramda';
+import { maxBy, reduce, reverse, unfold, values } from 'ramda';
 import { Block } from './Block';
-import { UTXO, UTXOPool } from './UTXOPool';
+import { UTXO } from './UTXOPool';
 
 const MINER_REWARD = 16;
 
@@ -8,43 +8,50 @@ export class Blockchain {
   name: string;
   blocks: Record<string, Block> = {};
   genesis: Block;
-  utxoPool: UTXOPool;
 
   constructor(name: string) {
     this.name = name;
     this.genesis = this.createGenesisBlock();
-    this.utxoPool = new UTXOPool();
   }
 
   createGenesisBlock() {
     const opts = {
       blockchain: this,
       parentHash: 'root',
-      name: this.name,
-      height: 1,
+      // name: this.name,
     };
     const block = new Block(opts);
+    block.mineValidHash();
     this.blocks[block.hash] = block;
     return block;
   }
 
   addBlock(newBlock: Block, minerKey: string) {
-    newBlock.mineValidHash();
-    this._addBlock(newBlock);
-
-    const utxo = new UTXO(MINER_REWARD, minerKey);
-    this.utxoPool.addUTXO(utxo);
+    return this._addBlock(newBlock, minerKey);
   }
 
-  _addBlock(block: Block) {
+  _addBlock(block: Block, minerKey: string) {
     if (!block.isValid()) return;
     if (this.containsBlock(block)) return;
-
+    
     // check that the parent exists
     const parent = this.blocks[block.parentHash];
-    if (parent === undefined || parent.height + 1 !== block.height) return;
+    if (parent === undefined) return;
+    if (this.blocks[block.hash]) throw new Error("A block with that hash is already in the blockchain.");
+
+    block.height = parent.height + 1;
+    // this new block should have a new utxo which is a clone of it's parent's utxo
+    // plus a new utxo for the miner
+    const newUtxoPool = parent.utxoPool.clone();
+    block.utxoPool = newUtxoPool;
+
+    const minerUtxo = new UTXO(MINER_REWARD, minerKey)
+    block.utxoPool.addUTXO(minerUtxo)
 
     this.blocks[block.hash] = block;
+
+    // console.log('block before return', block)
+    return block;
   }
 
   containsBlock(block: Block) {
