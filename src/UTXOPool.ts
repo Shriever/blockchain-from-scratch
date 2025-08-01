@@ -1,6 +1,7 @@
 import { clone } from 'ramda';
 import { Transaction } from './Transaction';
 import { verifySignature } from './utils/crypto';
+import { Wallet } from './Wallet';
 
 export class UTXO {
   value: number;
@@ -25,15 +26,37 @@ export class UTXOPool {
   handleTransaction(transaction: Transaction) {
     const { success, errorMessage } = this.isValidTransaction(transaction);
     if (!success) throw new Error(errorMessage);
-    const { sender, amount } = transaction;
+
+    const { sender, amount, to } = transaction;
+    const senderUtxos = this.findByPublicKey(sender.getPublicKey());
 
     const indicesToBurn: number[] = [];
-    this.findByPublicKey(sender.getPublicKey()).reduce((total, utxo, i) => {
+
+    // Already checked that balance is sufficient
+    const amountToBurn = senderUtxos.reduce((total, utxo, i) => {
       if (total >= amount) return total;
 
       indicesToBurn.push(i);
       return total + utxo.value;
     }, 0);
+    const change = amountToBurn - amount; // return to sender
+
+    // burn utxos
+    indicesToBurn.forEach(i => {
+      senderUtxos.splice(i);
+    });
+    this._setUtxos(senderUtxos, sender.getPublicKey())
+
+
+    // create a new utxo to send to recipient
+    const toUtxo = new UTXO(amount, to);
+    this.addUTXO(toUtxo)
+
+    // create a new utxo as change to return to sender if there is change
+    if (change > 0) {
+      const changeUtxo = new UTXO(change, sender.getPublicKey());
+      this.addUTXO(changeUtxo);
+    }
   }
 
   isValidTransaction(transaction: Transaction) {
@@ -55,6 +78,10 @@ export class UTXOPool {
 
     returnValues.success = true;
     return returnValues;
+  }
+
+  _setUtxos(utxos: UTXO[], publicKey: string) {
+    this.utxos.set(publicKey, utxos)
   }
 
   addUTXO(utxo: UTXO) {
