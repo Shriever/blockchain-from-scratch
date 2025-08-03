@@ -24,3 +24,4 @@ when a wallet initiates a transfer, they can send the new transaction
 to the blockchain as a pending transaction. When there are x transactions 
 pending, they will be added to a new block and mined before being added to 
 the blockchain.
+

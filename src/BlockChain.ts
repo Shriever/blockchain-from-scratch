@@ -95,4 +95,9 @@ export class Blockchain {
     };
     return reverse(unfold(getParent, this.maxHeightBlock()));
   }
+
+  generateTestFunds(amount: number, publicKey: string) {
+    const utxo = new UTXO(amount, publicKey);
+    this.maxHeightBlock().utxoPool.addUTXO(utxo);
+  }
 }

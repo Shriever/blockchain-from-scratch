@@ -76,7 +76,7 @@ export class UTXOPool {
 
     if (!isValidSignature) returnValues.errorMessage = 'Invalid Signature';
 
-    returnValues.success = true;
+    returnValues.success = returnValues.errorMessage === '';
     return returnValues;
   }
 
