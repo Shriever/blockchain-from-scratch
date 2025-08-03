@@ -1,5 +1,7 @@
 import { SHA256 } from 'crypto-js';
 import { Wallet } from './Wallet';
+import { verifySignature } from './utils/crypto';
+import { UTXOPool } from './UTXOPool';
 
 export class Transaction {
   from: string;

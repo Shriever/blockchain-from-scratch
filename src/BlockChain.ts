@@ -1,6 +1,7 @@
 import { maxBy, reduce, reverse, unfold, values } from 'ramda';
 import { Block } from './Block';
 import { UTXO } from './UTXOPool';
+import { Transaction } from './Transaction';
 
 const MINER_REWARD = 16;
 
@@ -8,6 +9,7 @@ export class Blockchain {
   name: string;
   blocks: Record<string, Block> = {};
   genesis: Block;
+  memPool: Transaction[] = [];
 
   constructor(name: string) {
     this.name = name;
@@ -32,11 +34,12 @@ export class Blockchain {
   _addBlock(block: Block, minerKey: string) {
     if (!block.isValid()) return;
     if (this.containsBlock(block)) return;
-    
+
     // check that the parent exists
     const parent = this.blocks[block.parentHash];
     if (parent === undefined) return;
-    if (this.blocks[block.hash]) throw new Error("A block with that hash is already in the blockchain.");
+    if (this.blocks[block.hash])
+      throw new Error('A block with that hash is already in the blockchain.');
 
     block.height = parent.height + 1;
     // this new block should have a new utxo which is a clone of it's parent's utxo
@@ -44,13 +47,30 @@ export class Blockchain {
     const newUtxoPool = parent.utxoPool.clone();
     block.utxoPool = newUtxoPool;
 
-    const minerUtxo = new UTXO(MINER_REWARD, minerKey)
-    block.utxoPool.addUTXO(minerUtxo)
+    const minerUtxo = new UTXO(MINER_REWARD, minerKey);
+    block.utxoPool.addUTXO(minerUtxo);
 
     this.blocks[block.hash] = block;
 
     // console.log('block before return', block)
     return block;
+  }
+
+  addToMempool(transaction: Transaction) {
+    // make sure transaction is valid
+    const tallestBlockUtxoPool = this.maxHeightBlock().utxoPool;
+    const { success, errorMessage } =
+      tallestBlockUtxoPool.isValidTransaction(transaction);
+    if (!success) throw new Error(errorMessage);
+    // add transaction to mempool
+    // if mempool full trigger a new block holding all transactions in mempool
+  }
+
+  getUserBalance(publicKey: string) {
+    const maxHeightUtxoPool = this.maxHeightBlock().utxoPool;
+    const balance = maxHeightUtxoPool.getBalanceByPublicKey(publicKey);
+
+    return balance;
   }
 
   containsBlock(block: Block) {

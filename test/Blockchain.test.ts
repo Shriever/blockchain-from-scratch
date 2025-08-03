@@ -7,50 +7,30 @@ import { generatePair } from '../src/utils/crypto';
 
 describe('Blockchain', () => {
   let blockchain: Blockchain;
-  let block1: Block;
-  let block2: Block;
-  let block3: Block;
-  let block4: Block;
-  let blocks: Block[];
-
   let miner: Wallet;
-
+  let blocks: Block[];
   beforeEach(() => {
+    let opts: BlockParams;
+    blockchain = new Blockchain('Bitcoin');
     miner = new Wallet(generatePair());
+    blocks = [];
 
-    blockchain = new Blockchain('myblockchain');
-    const opts1: BlockParams = {
-      blockchain,
-      parentHash: blockchain.genesis.hash,
-    };
-    block1 = new Block(opts1);
-    block1.mineValidHash();
+    for (let i = 0; i < 4; i++) {
+      opts = {
+        blockchain,
+        parentHash:
+          i === 0
+            ? blockchain.genesis.hash
+            : blocks[blocks.length - 1].hash,
+      };
 
-    const opts2: BlockParams = {
-      blockchain,
-      parentHash: block1.hash,
-    };
-    block2 = new Block(opts2);
-    block2.mineValidHash();
-
-    const opts3: BlockParams = {
-      blockchain,
-      parentHash: block2.hash,
-    };
-    block3 = new Block(opts3);
-    block3.mineValidHash();
-
-    const opts4: BlockParams = {
-      blockchain,
-      parentHash: block1.hash,
-    };
-    block4 = new Block(opts4);
-    block4.mineValidHash();
-
-    blocks = [block1, block2, block3, block4];
+      const block = new Block(opts);
+      block.mineValidHash();
+      blocks.push(block);
+    }
   });
 
-  it('Should create genesis block', () => {
+    it('Should create genesis block', () => {
     expect(blockchain.genesis).to.exist;
   });
 
@@ -66,14 +46,10 @@ describe('Blockchain', () => {
     const key = miner.getPublicKey();
     blocks.forEach(b => blockchain.addBlock(b, key));
 
-    const longest = blockchain.longestChain();
+    const longest = blockchain.longestChain().map(b => b.hash);
+    const hashes = blocks.map(b => b.hash);
+    hashes.unshift(blockchain.genesis.hash)
 
-    expect(longest.length).to.equal(4);
-    expect(longest.map(b => b.hash)).to.eql([
-      blockchain.genesis.hash,
-      block1.hash,
-      block2.hash,
-      block3.hash,
-    ]);
+    expect(longest).to.eql(hashes);
   });
 });

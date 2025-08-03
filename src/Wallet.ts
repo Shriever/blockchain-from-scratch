@@ -22,19 +22,6 @@ export class Wallet {
     sign(message, this.keyPair.privateKey);
   }
 
-  getBalance(blockchain: Blockchain) {
-    /**
-     * 1. Get the maxHeightBlock
-     * 2. Look inside the utxo pool and find array of utxos owned by the given public key
-     * 3. compute the balance by adding all utxos in array
-     */
-    const maxHeightBlock = blockchain.maxHeightBlock();
-    const utxos = maxHeightBlock.utxoPool.findByPublicKey(this.getPublicKey());
-    const balance = utxos.reduce((total, utxo) => total + utxo.value, 0);
-
-    return balance;
-  }
-
   getPublicKey() {
     return this.keyPair.publicKey;
   }
