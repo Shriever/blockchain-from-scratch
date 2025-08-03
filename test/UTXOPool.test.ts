@@ -20,9 +20,7 @@ describe('UTXOPool', () => {
       opts = {
         blockchain,
         parentHash:
-          i === 0
-            ? blockchain.genesis.hash
-            : blocks[blocks.length - 1].hash,
+          i === 0 ? blockchain.genesis.hash : blocks[blocks.length - 1].hash,
       };
 
       const block = new Block(opts);
@@ -56,21 +54,63 @@ describe('UTXOPool', () => {
   });
 
   it('isValidTransaction should validate transactions', () => {
-    const sender = new Wallet(generatePair())
+    const sender = new Wallet(generatePair());
     const to = new Wallet(generatePair()).getPublicKey();
     const amount = 10;
     const message = 'secret message';
-    const signature = sign(message, sender.keyPair.privateKey)
+    const signature = sign(message, sender.keyPair.privateKey);
 
-    blockchain.generateTestFunds(100, sender.getPublicKey())
+    blockchain.generateTestFunds(100, sender.getPublicKey());
 
-    const validTransaction = new Transaction(sender, to, amount, message, signature)
-    const InsufficientFundsTransaction = new Transaction(sender, to, 1000, message, signature)
-    const invalidSignatureTransaction = new Transaction(sender, to, amount, message, 'invalid signature')
+    const validTransaction = new Transaction(
+      sender,
+      to,
+      amount,
+      message,
+      signature
+    );
+    const InsufficientFundsTransaction = new Transaction(
+      sender,
+      to,
+      1000,
+      message,
+      signature
+    );
+    const invalidSignatureTransaction = new Transaction(
+      sender,
+      to,
+      amount,
+      message,
+      'invalid signature'
+    );
     const utxoPool = blockchain.maxHeightBlock().utxoPool;
 
     expect(utxoPool.isValidTransaction(validTransaction).success).to.be.true;
-    expect(utxoPool.isValidTransaction(InsufficientFundsTransaction).success).to.be.false;
-    expect(utxoPool.isValidTransaction(invalidSignatureTransaction).success).to.be.false;
-  })
+    expect(utxoPool.isValidTransaction(InsufficientFundsTransaction).success).to
+      .be.false;
+    expect(utxoPool.isValidTransaction(invalidSignatureTransaction).success).to
+      .be.false;
+  });
+  it('handleTransaction should update balances', () => {
+    const sender = new Wallet(generatePair());
+    const to = new Wallet(generatePair()).getPublicKey();
+    const amount = 10;
+    const message = 'secret message';
+    const signature = sign(message, sender.keyPair.privateKey);
+
+    blockchain.generateTestFunds(100, sender.getPublicKey());
+    const senderBalanceBefore = blockchain.getUserBalance(
+      sender.getPublicKey()
+    );
+    const toBalanceBefore = blockchain.getUserBalance(to);
+
+    const transaction = new Transaction(sender, to, amount, message, signature);
+
+    blockchain.maxHeightBlock().utxoPool.handleTransaction(transaction);
+    const senderBalanceAfter = blockchain.getUserBalance(sender.getPublicKey());
+    const toBalanceAfter = blockchain.getUserBalance(to);
+
+    expect(senderBalanceBefore - amount).to.equal(senderBalanceAfter);
+    expect(toBalanceBefore + amount).to.equal(toBalanceAfter);
+  });
 });
