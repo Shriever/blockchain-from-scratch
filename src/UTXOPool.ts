@@ -1,7 +1,6 @@
 import { clone } from 'ramda';
 import { Transaction } from './Transaction';
 import { verifySignature } from './utils/crypto';
-import { Wallet } from './Wallet';
 
 export class UTXO {
   value: number;

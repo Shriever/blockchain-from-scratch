@@ -9,7 +9,7 @@ export class Blockchain {
   name: string;
   blocks: Record<string, Block> = {};
   genesis: Block;
-  memPool: Transaction[] = [];
+  mempool: Transaction[] = [];
 
   constructor(name: string) {
     this.name = name;
@@ -52,18 +52,24 @@ export class Blockchain {
 
     this.blocks[block.hash] = block;
 
-    // console.log('block before return', block)
     return block;
   }
 
+  // @dev doesn't check whether transactions in mempool spend the same utxo twice
   addToMempool(transaction: Transaction) {
-    // make sure transaction is valid
     const tallestBlockUtxoPool = this.maxHeightBlock().utxoPool;
     const { success, errorMessage } =
       tallestBlockUtxoPool.isValidTransaction(transaction);
     if (!success) throw new Error(errorMessage);
-    // add transaction to mempool
-    // if mempool full trigger a new block holding all transactions in mempool
+
+    const alreadyInMempool = this.mempool
+      .map(t => t.hash)
+      .includes(transaction.hash);
+
+    if (alreadyInMempool)
+      throw new Error('Transaction already in mempool.');
+
+    this.mempool.push(transaction);
   }
 
   getUserBalance(publicKey: string) {
