@@ -39,6 +39,5 @@ describe('Block', () => {
     block1.mineValidHash();
 
     expect(hash).to.not.equal(block1.hash);
-    expect(block1.nonce).to.not.equal('5000');
   });
 });

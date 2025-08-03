@@ -70,8 +70,9 @@ export class UTXOPool {
     );
 
     const senderBalance = this.getBalanceByPublicKey(senderPublicKey);
-    if (senderBalance < transaction.amount)
-      returnValues.errorMessage = 'Insufficient Balance';
+    if (senderBalance < transaction.amount){
+      returnValues.errorMessage = `Insufficient Balance: Tried to send ${transaction.amount}, but sender only has ${senderBalance}`;
+    }
 
     if (!isValidSignature) returnValues.errorMessage = 'Invalid Signature';
 

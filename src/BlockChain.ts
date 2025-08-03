@@ -1,4 +1,4 @@
-import { maxBy, reduce, reverse, unfold, values } from 'ramda';
+import { maxBy, o, reduce, reverse, unfold, values } from 'ramda';
 import { Block } from './Block';
 import { UTXO } from './UTXOPool';
 import { Transaction } from './Transaction';
@@ -41,14 +41,27 @@ export class Blockchain {
     if (this.blocks[block.hash])
       throw new Error('A block with that hash is already in the blockchain.');
 
-    block.height = parent.height + 1;
-    // this new block should have a new utxo which is a clone of it's parent's utxo
-    // plus a new utxo for the miner
     const newUtxoPool = parent.utxoPool.clone();
     block.utxoPool = newUtxoPool;
 
     const minerUtxo = new UTXO(MINER_REWARD, minerKey);
     block.utxoPool.addUTXO(minerUtxo);
+
+    block.transactions.forEach(tx => {
+      if (!block.utxoPool.isValidTransaction(tx)) {
+        throw new Error('Invalid transaction detected in block!');
+      }
+    });
+
+    // Remove this blocks transactions from mempool and implement txs
+    block.transactions.forEach(tx => {
+      const mempoolHashes = this.mempool.map(tx => tx.hash);
+
+      this.mempool.filter(tx => mempoolHashes.includes(tx.hash));
+      block.utxoPool.handleTransaction(tx);
+    });
+
+    block.height = parent.height + 1;
 
     this.blocks[block.hash] = block;
 
@@ -66,8 +79,7 @@ export class Blockchain {
       .map(t => t.hash)
       .includes(transaction.hash);
 
-    if (alreadyInMempool)
-      throw new Error('Transaction already in mempool.');
+    if (alreadyInMempool) throw new Error('Transaction already in mempool.');
 
     this.mempool.push(transaction);
   }

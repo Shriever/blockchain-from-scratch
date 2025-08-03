@@ -63,6 +63,10 @@ export class Block {
     }
   }
 
+  addTransaction(tx: Transaction) {
+    this.transactions.push(tx);
+  }
+
   toJSON() {
     return {
       nonce: this.nonce,
