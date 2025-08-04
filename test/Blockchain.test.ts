@@ -5,6 +5,7 @@ import { BlockParams } from '../types/BlockParams';
 import { Wallet } from '../src/Wallet';
 import { generatePair, sign } from '../src/utils/crypto';
 import { Transaction } from '../src/Transaction';
+import { tx, tx1000 } from './fixtures/transactions';
 
 describe('Blockchain', () => {
   let blockchain: Blockchain;
@@ -53,49 +54,26 @@ describe('Blockchain', () => {
   });
 
   it('Should add transactions to the mempool', () => {
-    const sender = new Wallet(generatePair());
-    const to = new Wallet(generatePair()).getPublicKey();
-    const amount = 10;
-    const message = 'secret message';
-    const signature = sign(message, sender.keyPair.privateKey);
+    blockchain.generateTestFunds(100, tx.sender.getPublicKey());
 
-    blockchain.generateTestFunds(100, sender.getPublicKey());
+    blockchain.addToMempool(tx);
 
-    const transaction = new Transaction(sender, to, amount, message, signature);
-    const invalidTransaction = new Transaction(
-      sender,
-      to,
-      1000,
-      message,
-      signature
-    );
-
-    blockchain.addToMempool(transaction);
-
-    expect(blockchain.mempool[0].hash).to.equal(transaction.hash);
-    expect(() => blockchain.addToMempool(transaction)).to.throw(
+    expect(blockchain.mempool[0].hash).to.equal(tx.hash);
+    expect(() => blockchain.addToMempool(tx)).to.throw(
       'Transaction already in mempool.'
     );
-    expect(() => blockchain.addToMempool(invalidTransaction)).to.throw(
+    expect(() => blockchain.addToMempool(tx1000)).to.throw(
       'Insufficient Balance'
     );
   });
 
   it('emits transactionAdded when tx is added', () => {
-    const sender = new Wallet(generatePair());
-    const to = new Wallet(generatePair()).getPublicKey();
-    const amount = 10;
-    const message = 'secret message';
-    const signature = sign(message, sender.keyPair.privateKey);
+    blockchain.generateTestFunds(100, tx.sender.getPublicKey());
 
-    blockchain.generateTestFunds(100, sender.getPublicKey());
-
-    const tx = new Transaction(sender, to, amount, message, signature);
-
-    blockchain.once('transactionAdded', (evt) => {
-      expect(evt.hash).to.eql(tx.hash)
-    })
+    blockchain.once('transactionAdded', evt => {
+      expect(evt.hash).to.eql(tx.hash);
+    });
 
     blockchain.addToMempool(tx);
-  })
+  });
 });

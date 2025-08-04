@@ -22,34 +22,36 @@ export class UTXOPool {
 
   // verifies that wallet was initiated by owner
   // and that owner has sufficient funds
-  handleTransaction(transaction: Transaction) {
+  handleTransaction(transaction: Transaction, feeReceiverKey: string) {
     const { success, errorMessage } = this.isValidTransaction(transaction);
     if (!success) throw new Error(errorMessage);
 
-    const { sender, amount, to } = transaction;
+    const { sender, amount, to, fee } = transaction;
     const senderUtxos = this.findByPublicKey(sender.getPublicKey());
 
     const indicesToBurn: number[] = [];
 
     // Already checked that balance is sufficient
     const amountToBurn = senderUtxos.reduce((total, utxo, i) => {
-      if (total >= amount) return total;
+      if (total >= amount + fee) return total;
 
       indicesToBurn.push(i);
       return total + utxo.value;
     }, 0);
-    const change = amountToBurn - amount; // return to sender
+    const change = amountToBurn - (amount + fee); // return to sender
 
     // burn utxos
     indicesToBurn.forEach(i => {
       senderUtxos.splice(i);
     });
-    this._setUtxos(senderUtxos, sender.getPublicKey())
-
+    this._setUtxos(senderUtxos, sender.getPublicKey());
 
     // create a new utxo to send to recipient
     const toUtxo = new UTXO(amount, to);
-    this.addUTXO(toUtxo)
+    this.addUTXO(toUtxo);
+
+    const feeUtxo = new UTXO(fee, feeReceiverKey);
+    this.addUTXO(feeUtxo);
 
     // create a new utxo as change to return to sender if there is change
     if (change > 0) {
@@ -59,7 +61,7 @@ export class UTXOPool {
   }
 
   isValidTransaction(transaction: Transaction) {
-    const { message, signature, sender } = transaction;
+    const { message, signature, sender, amount, fee } = transaction;
     const senderPublicKey = sender.getPublicKey();
     const returnValues = { success: false, errorMessage: '' };
 
@@ -70,8 +72,10 @@ export class UTXOPool {
     );
 
     const senderBalance = this.getBalanceByPublicKey(senderPublicKey);
-    if (senderBalance < transaction.amount){
-      returnValues.errorMessage = `Insufficient Balance: Tried to send ${transaction.amount}, but sender only has ${senderBalance}`;
+    if (senderBalance < amount + fee) {
+      returnValues.errorMessage = `Insufficient Balance: Tried to send ${
+        amount + fee
+      }, but sender only has ${senderBalance}`;
     }
 
     if (!isValidSignature) returnValues.errorMessage = 'Invalid Signature';
@@ -81,7 +85,7 @@ export class UTXOPool {
   }
 
   _setUtxos(utxos: UTXO[], publicKey: string) {
-    this.utxos.set(publicKey, utxos)
+    this.utxos.set(publicKey, utxos);
   }
 
   addUTXO(utxo: UTXO) {

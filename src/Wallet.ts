@@ -26,12 +26,19 @@ export class Wallet {
   getPublicKey() {
     return this.keyPair.publicKey;
   }
-  send(blockchain: Blockchain, to: string, amount: number) {
+  send(blockchain: Blockchain, to: string, amount: number, fee: number) {
     if (amount <= 0) throw new Error('invalid amount');
     const message = SHA256(to + amount.toString() + Date.now()).toString();
 
     const signature = sign(message, this.keyPair.privateKey);
-    const transaction = new Transaction(this, to, amount, message, signature);
+    const transaction = new Transaction(
+      this,
+      to,
+      amount,
+      message,
+      signature,
+      fee
+    );
 
     blockchain.addToMempool(transaction);
   }

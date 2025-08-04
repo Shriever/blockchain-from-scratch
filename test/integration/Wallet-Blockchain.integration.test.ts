@@ -3,15 +3,14 @@ import { Blockchain } from '../../src/BlockChain';
 import { generatePair } from '../../src/utils/crypto';
 import { Wallet } from '../../src/Wallet';
 import { Block } from '../../src/Block';
+import { tx } from '../fixtures/transactions';
 
 describe('Wallet -> Miner -> Blockchain integration', () => {
   it('should send a tx, mine it into a block, and add to blockchain', () => {
     // Add tx to mempool
     const blockchain = new Blockchain('Bitcoin');
-    const sender = new Wallet(generatePair());
-    const to = new Wallet(generatePair()).getPublicKey();
-    const amount = 10;
     const { genesis, mempool } = blockchain;
+    const { sender, to, amount, fee } = tx;
 
     blockchain.generateTestFunds(100, sender.getPublicKey());
 
@@ -20,7 +19,7 @@ describe('Wallet -> Miner -> Blockchain integration', () => {
       .utxoPool.getBalanceByPublicKey(sender.getPublicKey());
     const toBalanceBefore = 0;
 
-    sender.send(blockchain, to, amount);
+    sender.send(blockchain, to, amount, fee);
 
     expect(mempool[0].to).to.equal(to);
 
@@ -45,13 +44,15 @@ describe('Wallet -> Miner -> Blockchain integration', () => {
     blockchain.addBlock(block, miner.getPublicKey());
 
     const utxoPool = blockchain.maxHeightBlock().utxoPool;
-    const senderBalanceAfter = utxoPool.getBalanceByPublicKey(sender.getPublicKey())
+    const senderBalanceAfter = utxoPool.getBalanceByPublicKey(
+      sender.getPublicKey()
+    );
     const toBalanceAfter = utxoPool.getBalanceByPublicKey(to);
     const minerBalance = utxoPool.getBalanceByPublicKey(miner.getPublicKey());
 
     expect(blockchain.maxHeightBlock()).to.eql(block);
-    expect(senderBalanceBefore - amount).to.equal(senderBalanceAfter);
+    expect(senderBalanceBefore - (amount + fee)).to.equal(senderBalanceAfter);
     expect(toBalanceBefore + amount).to.equal(toBalanceAfter);
-    expect(minerBalance).to.equal(16)
+    expect(minerBalance).to.equal(fee);
   });
 });

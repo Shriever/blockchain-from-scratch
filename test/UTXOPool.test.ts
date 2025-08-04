@@ -5,6 +5,7 @@ import { generatePair, sign } from '../src/utils/crypto';
 import { Block } from '../src/Block';
 import { BlockParams } from '../types/BlockParams';
 import { Transaction } from '../src/Transaction';
+import { invalidSigTx, tx, tx1000 } from './fixtures/transactions';
 
 describe('UTXOPool', () => {
   let blockchain: Blockchain;
@@ -30,16 +31,24 @@ describe('UTXOPool', () => {
   });
 
   it('Should compensate miner according to maxHeightBlock', () => {
-    const compensationPerBlock = 16;
+    const { fee, sender } = tx;
+
+    blockchain.generateTestFunds(100, sender.getPublicKey());
+
+    blocks[0].addTransaction(tx);
     blocks.forEach(b => {
       blockchain.addBlock(b, miner.getPublicKey());
     });
 
     const minerBalance = blockchain.getUserBalance(miner.getPublicKey());
-    expect(minerBalance).to.equal(blocks.length * compensationPerBlock);
+    expect(minerBalance).to.equal(fee);
   });
 
   it('findByPublicKey() should return array of utxos owned by public key', () => {
+    const { sender, fee } = tx;
+    blockchain.generateTestFunds(100, sender.getPublicKey());
+    blocks[0].addTransaction(tx);
+
     blocks.forEach(b => {
       blockchain.addBlock(b, miner.getPublicKey());
     });
@@ -49,68 +58,36 @@ describe('UTXOPool', () => {
     const minerUtxos = maxUtxoPool.findByPublicKey(miner.getPublicKey());
 
     expect(minerUtxos[0].ownerPublicKey).to.equal(miner.getPublicKey());
-    expect(minerUtxos[0].value).to.equal(16);
-    expect(minerUtxos.length).to.equal(blocks.length);
+    expect(minerUtxos[0].value).to.equal(fee);
+    expect(minerUtxos.length).to.equal(1);
   });
 
   it('isValidTransaction should validate transactions', () => {
-    const sender = new Wallet(generatePair());
-    const to = new Wallet(generatePair()).getPublicKey();
-    const amount = 10;
-    const message = 'secret message';
-    const signature = sign(message, sender.keyPair.privateKey);
-
+    const { sender } = tx;
     blockchain.generateTestFunds(100, sender.getPublicKey());
 
-    const validTransaction = new Transaction(
-      sender,
-      to,
-      amount,
-      message,
-      signature
-    );
-    const InsufficientFundsTransaction = new Transaction(
-      sender,
-      to,
-      1000,
-      message,
-      signature
-    );
-    const invalidSignatureTransaction = new Transaction(
-      sender,
-      to,
-      amount,
-      message,
-      'invalid signature'
-    );
     const utxoPool = blockchain.maxHeightBlock().utxoPool;
 
-    expect(utxoPool.isValidTransaction(validTransaction).success).to.be.true;
-    expect(utxoPool.isValidTransaction(InsufficientFundsTransaction).success).to
-      .be.false;
-    expect(utxoPool.isValidTransaction(invalidSignatureTransaction).success).to
-      .be.false;
+    expect(utxoPool.isValidTransaction(tx).success).to.be.true;
+    expect(utxoPool.isValidTransaction(tx1000).success).to.be.false;
+    expect(utxoPool.isValidTransaction(invalidSigTx).success).to.be.false;
   });
-  it('handleTransaction should update balances', () => {
-    const sender = new Wallet(generatePair());
-    const to = new Wallet(generatePair()).getPublicKey();
-    const amount = 10;
-    const message = 'secret message';
-    const signature = sign(message, sender.keyPair.privateKey);
 
+  it('handleTransaction should update balances', () => {
+    const { sender, to, amount, fee } = tx;
     blockchain.generateTestFunds(100, sender.getPublicKey());
     const senderBalanceBefore = blockchain.getUserBalance(
-      sender.getPublicKey()
+      tx.sender.getPublicKey()
     );
     const toBalanceBefore = blockchain.getUserBalance(to);
 
-    const transaction = new Transaction(sender, to, amount, message, signature);
-
-    blockchain.maxHeightBlock().utxoPool.handleTransaction(transaction);
+    blockchain
+      .maxHeightBlock()
+      .utxoPool.handleTransaction(tx, miner.getPublicKey());
     const senderBalanceAfter = blockchain.getUserBalance(sender.getPublicKey());
     const toBalanceAfter = blockchain.getUserBalance(to);
 
-    expect(senderBalanceBefore - amount).to.equal(senderBalanceAfter);
+    expect(senderBalanceBefore - (amount + fee)).to.equal(senderBalanceAfter);
     expect(toBalanceBefore + amount).to.equal(toBalanceAfter);
   });
 });

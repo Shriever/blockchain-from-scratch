@@ -9,6 +9,7 @@ export class Transaction {
   message: string;
   signature: string;
   sender: Wallet;
+  fee: number;
 
   constructor(
     sender: Wallet,
@@ -16,6 +17,7 @@ export class Transaction {
     amount: number,
     message: string,
     signature: string,
+    fee: number
   ) {
     this.sender = sender;
     this.from = this.sender.getPublicKey();
@@ -23,6 +25,7 @@ export class Transaction {
     this.amount = amount;
     this.message = message;
     this.signature = signature;
+    this.fee = fee;
     this._setHash();
   }
 

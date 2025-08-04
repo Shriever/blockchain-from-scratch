@@ -46,8 +46,8 @@ export class Blockchain extends EventEmitter {
     const newUtxoPool = parent.utxoPool.clone();
     block.utxoPool = newUtxoPool;
 
-    const minerUtxo = new UTXO(MINER_REWARD, minerKey);
-    block.utxoPool.addUTXO(minerUtxo);
+    // const minerUtxo = new UTXO(MINER_REWARD, minerKey);
+    // block.utxoPool.addUTXO(minerUtxo);
 
     block.transactions.forEach(tx => {
       if (!block.utxoPool.isValidTransaction(tx)) {
@@ -60,7 +60,7 @@ export class Blockchain extends EventEmitter {
       const mempoolHashes = this.mempool.map(tx => tx.hash);
 
       this.mempool.filter(tx => mempoolHashes.includes(tx.hash));
-      block.utxoPool.handleTransaction(tx);
+      block.utxoPool.handleTransaction(tx, minerKey);
     });
 
     block.height = parent.height + 1;
@@ -77,21 +77,19 @@ export class Blockchain extends EventEmitter {
       tallestBlockUtxoPool.isValidTransaction(tx);
     if (!success) throw new Error(errorMessage);
 
-    const alreadyInMempool = this.mempool
-      .map(t => t.hash)
-      .includes(tx.hash);
+    const alreadyInMempool = this.mempool.map(t => t.hash).includes(tx.hash);
 
     if (alreadyInMempool) throw new Error('Transaction already in mempool.');
 
-    this.emit('transactionAdded', tx)
+    this.emit('transactionAdded', tx);
 
     this.mempool.push(tx);
   }
 
   subscribeToTxs() {
-    this.on('transactionAdded', ({tx, mempoolSize}) => {
-      console.log(`New TX ${tx.hash} in mempool (size=${mempoolSize})`)
-    })
+    this.on('transactionAdded', ({ tx, mempoolSize }) => {
+      console.log(`New TX ${tx.hash} in mempool (size=${mempoolSize})`);
+    });
   }
 
   getUserBalance(publicKey: string) {
