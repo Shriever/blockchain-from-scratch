@@ -80,4 +80,22 @@ describe('Blockchain', () => {
       'Insufficient Balance'
     );
   });
+
+  it('emits transactionAdded when tx is added', () => {
+    const sender = new Wallet(generatePair());
+    const to = new Wallet(generatePair()).getPublicKey();
+    const amount = 10;
+    const message = 'secret message';
+    const signature = sign(message, sender.keyPair.privateKey);
+
+    blockchain.generateTestFunds(100, sender.getPublicKey());
+
+    const tx = new Transaction(sender, to, amount, message, signature);
+
+    blockchain.once('transactionAdded', (evt) => {
+      expect(evt.hash).to.eql(tx.hash)
+    })
+
+    blockchain.addToMempool(tx);
+  })
 });

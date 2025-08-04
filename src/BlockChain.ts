@@ -1,17 +1,19 @@
 import { maxBy, o, reduce, reverse, unfold, values } from 'ramda';
+import EventEmitter from 'events';
 import { Block } from './Block';
 import { UTXO } from './UTXOPool';
 import { Transaction } from './Transaction';
 
 const MINER_REWARD = 16;
 
-export class Blockchain {
+export class Blockchain extends EventEmitter {
   name: string;
   blocks: Record<string, Block> = {};
   genesis: Block;
   mempool: Transaction[] = [];
 
   constructor(name: string) {
+    super();
     this.name = name;
     this.genesis = this.createGenesisBlock();
   }
@@ -69,19 +71,27 @@ export class Blockchain {
   }
 
   // @dev doesn't check whether transactions in mempool spend the same utxo twice
-  addToMempool(transaction: Transaction) {
+  addToMempool(tx: Transaction) {
     const tallestBlockUtxoPool = this.maxHeightBlock().utxoPool;
     const { success, errorMessage } =
-      tallestBlockUtxoPool.isValidTransaction(transaction);
+      tallestBlockUtxoPool.isValidTransaction(tx);
     if (!success) throw new Error(errorMessage);
 
     const alreadyInMempool = this.mempool
       .map(t => t.hash)
-      .includes(transaction.hash);
+      .includes(tx.hash);
 
     if (alreadyInMempool) throw new Error('Transaction already in mempool.');
 
-    this.mempool.push(transaction);
+    this.emit('transactionAdded', tx)
+
+    this.mempool.push(tx);
+  }
+
+  subscribeToTxs() {
+    this.on('transactionAdded', ({tx, mempoolSize}) => {
+      console.log(`New TX ${tx.hash} in mempool (size=${mempoolSize})`)
+    })
   }
 
   getUserBalance(publicKey: string) {
